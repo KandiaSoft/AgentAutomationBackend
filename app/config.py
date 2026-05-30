@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
     agent_url: str = "https://test-agent-prev-ai-777.edilnet.it/invoke_agent"
+    agent_url_local: str = "http://localhost:8001/invoke_agent"
+    agent_use_local: bool = False
     agent_user_id: str = "test-user-001"
     agent_username: str = "Test Client"
     max_concurrent: int = 10
@@ -16,6 +18,10 @@ class Settings(BaseSettings):
     agent_max_retries: int = 2
     delay_min_ms: int = 2000
     delay_max_ms: int = 6000
+
+    @property
+    def effective_agent_url(self) -> str:
+        return self.agent_url_local if self.agent_use_local else self.agent_url
 
 
 settings = Settings()

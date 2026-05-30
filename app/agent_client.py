@@ -7,6 +7,10 @@ from app.models import AgentRequest, AgentResponse, QuestionnaireItem
 
 class PreventivatoreClient:
     def __init__(self) -> None:
+        # verify=False only makes sense for HTTPS (self-signed certs on test servers).
+        # For plain HTTP (e.g. localhost) it is irrelevant but harmless; the important
+        # thing is that the URL scheme matches what the server actually speaks.
+        is_https = settings.effective_agent_url.startswith("https://")
         self._client = httpx.AsyncClient(
             timeout=httpx.Timeout(
                 connect=settings.agent_timeout_connect,
@@ -14,7 +18,7 @@ class PreventivatoreClient:
                 write=10.0,
                 pool=10.0,
             ),
-            verify=False,  # cert may be self-signed on test server
+            verify=False if is_https else True,
         )
 
     async def invoke(
@@ -36,7 +40,7 @@ class PreventivatoreClient:
 
         for attempt in range(settings.agent_max_retries + 1):
             try:
-                response = await self._client.post(settings.agent_url, json=body)
+                response = await self._client.post(settings.effective_agent_url, json=body)
                 if not response.is_success:
                     raise httpx.HTTPStatusError(
                         f"{response.status_code} {response.reason_phrase}: {response.text}",
