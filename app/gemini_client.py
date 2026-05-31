@@ -17,8 +17,9 @@ _QUESTIONNAIRE_SCHEMA = {
                     "number": {"type": "integer"},
                     "question": {"type": "string"},
                     "response": {"type": "string"},
+                    "expert_code": {"type": "string"},
                 },
-                "required": ["number", "question", "response"],
+                "required": ["number", "question", "response", "expert_code"],
             },
         },
         "reasoning": {"type": "string"},
@@ -62,6 +63,9 @@ class GeminiClient:
             f"Copy the chosen option EXACTLY (including numeric prefix) into the 'response' field. "
             f"Do NOT translate the option text — copy it verbatim. "
             f"Use the free-text option only if no option fits. "
+            f"Copy 'number' AND 'expert_code' EXACTLY as received — do not invent, translate or omit them. "
+            f"The pair (expert_code, number) is the unique key per question. "
+            f"If 'expert_code' was missing or null in the question, return an empty string \"\" for it. "
             f"Write the 'reasoning' field in {lang_name}."
         )
         response = await self._client.aio.models.generate_content(
@@ -79,6 +83,7 @@ class GeminiClient:
                 number=item["number"],
                 question=item["question"],
                 response=item["response"],
+                expert_code=item.get("expert_code") or None,
             )
             for item in data["questionnaire"]
         ]

@@ -36,7 +36,7 @@ class PreventivatoreClient:
             interrupt=interrupt,
             questionnaire=questionnaire,
         )
-        body = payload.model_dump()
+        body = payload.model_dump(exclude_none=True)
 
         for attempt in range(settings.agent_max_retries + 1):
             try:

@@ -7,12 +7,14 @@ class QuestionnaireItem(BaseModel):
     number: int
     question: str
     response: str = ""
+    expert_code: str | None = None
 
 
 class AgentQuestionnaireOption(BaseModel):
     number: int
     question: str
     responses: list[str]
+    expert_code: str | None = None
 
 
 class AgentRequest(BaseModel):
@@ -40,6 +42,7 @@ class AgentResponse(BaseModel):
     finished: bool = False
     questionnaire: list[AgentQuestionnaireOption] = []
     is_questionnaire: bool = False
+    agent: str | None = None
 
 
 class SimulationConfig(BaseModel):
