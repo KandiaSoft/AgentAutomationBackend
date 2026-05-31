@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 import json
+import time
 import uuid
 from datetime import datetime, timezone
 from app.agent_client import agent_client
@@ -52,12 +53,14 @@ class ClientSimulator:
 
             # Main loop
             while True:
+                _t0 = time.monotonic()
                 agent_resp = await agent_client.invoke(
                     thread_id=self.thread_id,
                     question=self._history[-1].get("question", ""),
                     interrupt=self._history[-1].get("interrupt", 0),
                     questionnaire=self._history[-1].get("questionnaire_items", []),
                 )
+                duration_ms = int((time.monotonic() - _t0) * 1000)
 
                 in_tok = sum(t.in_tokens for t in agent_resp.tokens)
                 out_tok = sum(t.out_tokens for t in agent_resp.tokens)
@@ -90,6 +93,7 @@ class ClientSimulator:
                     "client_reasoning": None,
                     "in_tokens": in_tok,
                     "out_tokens": out_tok,
+                    "duration_ms": duration_ms,
                     "created_at": _now(),
                 })
                 self._turn_index += 1
@@ -108,6 +112,7 @@ class ClientSimulator:
                     "questionnaire": [q.model_dump() for q in agent_resp.questionnaire],
                     "in_tokens": in_tok,
                     "out_tokens": out_tok,
+                    "duration_ms": duration_ms,
                 })
 
                 if agent_resp.finished:
@@ -215,6 +220,7 @@ class ClientSimulator:
             "client_reasoning": reasoning,
             "in_tokens": 0,
             "out_tokens": 0,
+            "duration_ms": None,
             "created_at": _now(),
         })
         self._turn_index += 1

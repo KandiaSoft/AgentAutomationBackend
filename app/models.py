@@ -84,6 +84,7 @@ class TurnRecord(BaseModel):
     client_reasoning: str | None
     in_tokens: int
     out_tokens: int
+    duration_ms: int | None
     created_at: str
 
 

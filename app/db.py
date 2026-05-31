@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS turns (
     client_reasoning TEXT,
     in_tokens INTEGER NOT NULL DEFAULT 0,
     out_tokens INTEGER NOT NULL DEFAULT 0,
+    duration_ms INTEGER,
     created_at TEXT NOT NULL
 );
 """
@@ -47,11 +48,15 @@ async def init_db() -> None:
     async with aiosqlite.connect(settings.db_path) as db:
         await db.execute(_CREATE_SIMULATIONS)
         await db.execute(_CREATE_TURNS)
-        # Migration: add language column to existing DBs
-        try:
-            await db.execute("ALTER TABLE simulations ADD COLUMN language TEXT NOT NULL DEFAULT 'it'")
-        except Exception:
-            pass  # column already exists
+        # Migrations for existing DBs
+        for ddl in [
+            "ALTER TABLE simulations ADD COLUMN language TEXT NOT NULL DEFAULT 'it'",
+            "ALTER TABLE turns ADD COLUMN duration_ms INTEGER",
+        ]:
+            try:
+                await db.execute(ddl)
+            except Exception:
+                pass  # column already exists
         await db.commit()
 
 
@@ -82,10 +87,10 @@ async def insert_turn(turn: dict) -> int:
         cursor = await db.execute(
             """INSERT INTO turns (simulation_id, turn_index, role, question, answer, understanding,
                is_questionnaire, has_interrupt, questionnaire_json, client_reasoning,
-               in_tokens, out_tokens, created_at)
+               in_tokens, out_tokens, duration_ms, created_at)
                VALUES (:simulation_id, :turn_index, :role, :question, :answer, :understanding,
                :is_questionnaire, :has_interrupt, :questionnaire_json, :client_reasoning,
-               :in_tokens, :out_tokens, :created_at)""",
+               :in_tokens, :out_tokens, :duration_ms, :created_at)""",
             turn,
         )
         await db.commit()

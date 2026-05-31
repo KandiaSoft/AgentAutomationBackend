@@ -49,6 +49,7 @@ def _row_to_turn(row: dict) -> TurnRecord:
         client_reasoning=row.get("client_reasoning"),
         in_tokens=row["in_tokens"],
         out_tokens=row["out_tokens"],
+        duration_ms=row.get("duration_ms"),
         created_at=row["created_at"],
     )
 
