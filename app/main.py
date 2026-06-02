@@ -1,10 +1,17 @@
 from __future__ import annotations
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import init_db
 from app.agent_client import agent_client
 from app.routers import simulations, catalog, ws
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 
 @asynccontextmanager

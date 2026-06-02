@@ -1,8 +1,12 @@
 from __future__ import annotations
 import asyncio
+import json
+import logging
 import httpx
 from app.config import settings
 from app.models import AgentRequest, AgentResponse, QuestionnaireItem
+
+logger = logging.getLogger(__name__)
 
 
 class PreventivatoreClient:
@@ -38,20 +42,56 @@ class PreventivatoreClient:
         )
         body = payload.model_dump(exclude_none=True)
 
+        logger.info(
+            "→ POST %s  thread=%s  interrupt=%d  q_items=%d",
+            settings.effective_agent_url,
+            thread_id,
+            interrupt,
+            len(questionnaire),
+        )
+        logger.debug("  request body:\n%s", json.dumps(body, ensure_ascii=False, indent=2))
+
         for attempt in range(settings.agent_max_retries + 1):
             try:
                 response = await self._client.post(settings.effective_agent_url, json=body)
                 if not response.is_success:
+                    logger.error(
+                        "← %d %s  thread=%s\n%s",
+                        response.status_code,
+                        response.reason_phrase,
+                        thread_id,
+                        response.text,
+                    )
                     raise httpx.HTTPStatusError(
                         f"{response.status_code} {response.reason_phrase}: {response.text}",
                         request=response.request,
                         response=response,
                     )
-                return AgentResponse.model_validate(response.json())
+
+                raw = response.json()
+                agent_resp = AgentResponse.model_validate(raw)
+                logger.info(
+                    "← 200  thread=%s  finished=%s  is_questionnaire=%s  agent=%s  q_items=%d",
+                    thread_id,
+                    agent_resp.finished,
+                    agent_resp.is_questionnaire,
+                    agent_resp.agent,
+                    len(agent_resp.questionnaire),
+                )
+                logger.debug("  response body:\n%s", json.dumps(raw, ensure_ascii=False, indent=2))
+                return agent_resp
+
             except (httpx.ReadTimeout, httpx.ConnectTimeout) as exc:
+                logger.warning(
+                    "  timeout on attempt %d/%d for thread=%s: %s",
+                    attempt + 1,
+                    settings.agent_max_retries + 1,
+                    thread_id,
+                    exc,
+                )
                 if attempt >= settings.agent_max_retries:
                     raise
-                wait = 5.0 * (attempt + 1)  # 5s first retry, 10s second
+                wait = 5.0 * (attempt + 1)
                 await asyncio.sleep(wait)
 
     async def close(self) -> None:
