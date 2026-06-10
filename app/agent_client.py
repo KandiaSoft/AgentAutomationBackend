@@ -70,13 +70,24 @@ class PreventivatoreClient:
 
                 raw = response.json()
                 agent_resp = AgentResponse.model_validate(raw)
+
+                tokens_raw = raw.get("tokens", [])
+                total_in = sum(t.in_tokens for t in agent_resp.tokens)
+                total_out = sum(t.out_tokens for t in agent_resp.tokens)
                 logger.info(
-                    "← 200  thread=%s  finished=%s  is_questionnaire=%s  agent=%s  q_items=%d",
+                    "← 200  thread=%s  finished=%s  is_questionnaire=%s  agent=%s  q_items=%d  tokens=↑%d ↓%d (entries=%d)",
                     thread_id,
                     agent_resp.finished,
                     agent_resp.is_questionnaire,
                     agent_resp.agent,
                     len(agent_resp.questionnaire),
+                    total_in,
+                    total_out,
+                    len(tokens_raw),
+                )
+                logger.info(
+                    "  tokens payload from agent:\n%s",
+                    json.dumps(tokens_raw, ensure_ascii=False, indent=2),
                 )
                 logger.debug("  response body:\n%s", json.dumps(raw, ensure_ascii=False, indent=2))
                 return agent_resp
