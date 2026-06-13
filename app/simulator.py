@@ -32,6 +32,7 @@ class ClientSimulator:
         self._turn_index = 0
         self._total_in = 0
         self._total_out = 0
+        self._total_cost = 0.0
 
     async def run(self) -> None:
         try:
@@ -67,6 +68,13 @@ class ClientSimulator:
                 self._total_in += in_tok
                 self._total_out += out_tok
 
+                # tokens_cost.total_cost is the CUMULATIVE cost of the whole chat,
+                # so we take the latest reported value (overwrite, not sum).
+                if agent_resp.tokens_cost:
+                    cost = agent_resp.tokens_cost.get("total_cost")
+                    if isinstance(cost, (int, float)):
+                        self._total_cost = float(cost)
+
                 agent_entry = {
                     "role": "agent",
                     "answer": agent_resp.answer,
@@ -101,6 +109,7 @@ class ClientSimulator:
                     self.sim_id,
                     total_in_tokens=self._total_in,
                     total_out_tokens=self._total_out,
+                    total_cost=self._total_cost,
                 )
                 await self._broadcast(self.sim_id, "turn", {
                     "turn_index": self._turn_index - 1,
@@ -113,6 +122,7 @@ class ClientSimulator:
                     "in_tokens": in_tok,
                     "out_tokens": out_tok,
                     "duration_ms": duration_ms,
+                    "total_cost": self._total_cost,
                 })
 
                 if agent_resp.finished:

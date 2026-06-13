@@ -26,6 +26,7 @@ def _row_to_summary(row: dict) -> SimulationSummary:
         finished=bool(row["finished"]),
         total_in_tokens=row["total_in_tokens"],
         total_out_tokens=row["total_out_tokens"],
+        total_cost=row.get("total_cost", 0.0) or 0.0,
         turn_count=row.get("turn_count", 0),
         created_at=row["created_at"],
         finished_at=row.get("finished_at"),

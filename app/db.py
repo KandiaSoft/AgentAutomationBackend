@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS simulations (
     short_codes_json TEXT NOT NULL DEFAULT '[]',
     total_in_tokens INTEGER NOT NULL DEFAULT 0,
     total_out_tokens INTEGER NOT NULL DEFAULT 0,
+    total_cost REAL NOT NULL DEFAULT 0,
     delay_min_ms INTEGER NOT NULL DEFAULT 2000,
     delay_max_ms INTEGER NOT NULL DEFAULT 6000,
     created_at TEXT NOT NULL,
@@ -51,6 +52,7 @@ async def init_db() -> None:
         # Migrations for existing DBs
         for ddl in [
             "ALTER TABLE simulations ADD COLUMN language TEXT NOT NULL DEFAULT 'it'",
+            "ALTER TABLE simulations ADD COLUMN total_cost REAL NOT NULL DEFAULT 0",
             "ALTER TABLE turns ADD COLUMN duration_ms INTEGER",
         ]:
             try:

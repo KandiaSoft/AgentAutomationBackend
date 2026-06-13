@@ -89,6 +89,13 @@ class PreventivatoreClient:
                     "  tokens payload from agent:\n%s",
                     json.dumps(tokens_raw, ensure_ascii=False, indent=2),
                 )
+                tokens_cost = raw.get("tokens_cost")
+                if tokens_cost is not None:
+                    logger.info(
+                        "  tokens_cost (total_cost=$%s):\n%s",
+                        tokens_cost.get("total_cost"),
+                        json.dumps(tokens_cost, ensure_ascii=False, indent=2),
+                    )
                 logger.debug("  response body:\n%s", json.dumps(raw, ensure_ascii=False, indent=2))
                 return agent_resp
 

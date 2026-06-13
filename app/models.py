@@ -43,6 +43,7 @@ class AgentResponse(BaseModel):
     questionnaire: list[AgentQuestionnaireOption] = []
     is_questionnaire: bool = False
     agent: str | None = None
+    tokens_cost: dict[str, Any] | None = None
 
 
 class SimulationConfig(BaseModel):
@@ -66,6 +67,7 @@ class SimulationSummary(BaseModel):
     finished: bool
     total_in_tokens: int
     total_out_tokens: int
+    total_cost: float = 0.0
     turn_count: int
     created_at: str
     finished_at: str | None
