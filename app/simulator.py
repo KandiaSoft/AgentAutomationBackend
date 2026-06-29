@@ -102,6 +102,8 @@ class ClientSimulator:
                     "in_tokens": in_tok,
                     "out_tokens": out_tok,
                     "duration_ms": duration_ms,
+                    "short_codes_json": json.dumps(agent_resp.short_codes, ensure_ascii=False),
+                    "checkpoint": int(agent_resp.checkpoint),
                     "created_at": _now(),
                 })
                 self._turn_index += 1
@@ -123,6 +125,8 @@ class ClientSimulator:
                     "out_tokens": out_tok,
                     "duration_ms": duration_ms,
                     "total_cost": self._total_cost,
+                    "short_codes": agent_resp.short_codes,
+                    "checkpoint": agent_resp.checkpoint,
                 })
 
                 if agent_resp.finished:
@@ -231,6 +235,8 @@ class ClientSimulator:
             "in_tokens": 0,
             "out_tokens": 0,
             "duration_ms": None,
+            "short_codes_json": "[]",
+            "checkpoint": 0,
             "created_at": _now(),
         })
         self._turn_index += 1

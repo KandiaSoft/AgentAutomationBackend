@@ -51,6 +51,8 @@ def _row_to_turn(row: dict) -> TurnRecord:
         in_tokens=row["in_tokens"],
         out_tokens=row["out_tokens"],
         duration_ms=row.get("duration_ms"),
+        short_codes=json.loads(row.get("short_codes_json") or "[]"),
+        checkpoint=bool(row.get("checkpoint")),
         created_at=row["created_at"],
     )
 

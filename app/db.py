@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS turns (
     in_tokens INTEGER NOT NULL DEFAULT 0,
     out_tokens INTEGER NOT NULL DEFAULT 0,
     duration_ms INTEGER,
+    short_codes_json TEXT NOT NULL DEFAULT '[]',
+    checkpoint INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
 );
 """
@@ -54,6 +56,8 @@ async def init_db() -> None:
             "ALTER TABLE simulations ADD COLUMN language TEXT NOT NULL DEFAULT 'it'",
             "ALTER TABLE simulations ADD COLUMN total_cost REAL NOT NULL DEFAULT 0",
             "ALTER TABLE turns ADD COLUMN duration_ms INTEGER",
+            "ALTER TABLE turns ADD COLUMN short_codes_json TEXT NOT NULL DEFAULT '[]'",
+            "ALTER TABLE turns ADD COLUMN checkpoint INTEGER NOT NULL DEFAULT 0",
         ]:
             try:
                 await db.execute(ddl)
@@ -89,10 +93,10 @@ async def insert_turn(turn: dict) -> int:
         cursor = await db.execute(
             """INSERT INTO turns (simulation_id, turn_index, role, question, answer, understanding,
                is_questionnaire, has_interrupt, questionnaire_json, client_reasoning,
-               in_tokens, out_tokens, duration_ms, created_at)
+               in_tokens, out_tokens, duration_ms, short_codes_json, checkpoint, created_at)
                VALUES (:simulation_id, :turn_index, :role, :question, :answer, :understanding,
                :is_questionnaire, :has_interrupt, :questionnaire_json, :client_reasoning,
-               :in_tokens, :out_tokens, :duration_ms, :created_at)""",
+               :in_tokens, :out_tokens, :duration_ms, :short_codes_json, :checkpoint, :created_at)""",
             turn,
         )
         await db.commit()

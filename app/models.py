@@ -44,6 +44,7 @@ class AgentResponse(BaseModel):
     is_questionnaire: bool = False
     agent: str | None = None
     tokens_cost: dict[str, Any] | None = None
+    checkpoint: bool = False
 
 
 class SimulationConfig(BaseModel):
@@ -90,6 +91,8 @@ class TurnRecord(BaseModel):
     in_tokens: int
     out_tokens: int
     duration_ms: int | None
+    short_codes: list[Any] = []
+    checkpoint: bool = False
     created_at: str
 
 
