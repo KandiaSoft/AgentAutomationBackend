@@ -43,17 +43,22 @@ class PreventivatoreClient:
         body = payload.model_dump(exclude_none=True)
 
         logger.info(
-            "→ POST %s  thread=%s  interrupt=%d  q_items=%d",
+            "→ POST %s  thread=%s  interrupt=%d  q_items=%d  auth=%s",
             settings.effective_agent_url,
             thread_id,
             interrupt,
             len(questionnaire),
+            "on" if settings.secret_validation == 1 else "off",
         )
         logger.debug("  request body:\n%s", json.dumps(body, ensure_ascii=False, indent=2))
 
+        headers = settings.security_headers
+
         for attempt in range(settings.agent_max_retries + 1):
             try:
-                response = await self._client.post(settings.effective_agent_url, json=body)
+                response = await self._client.post(
+                    settings.effective_agent_url, json=body, headers=headers
+                )
                 if not response.is_success:
                     logger.error(
                         "← %d %s  thread=%s\n%s",

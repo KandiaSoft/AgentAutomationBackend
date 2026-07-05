@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     agent_use_local: bool = False
     agent_user_id: str = "test-user-001"
     agent_username: str = "Test Client"
+    # Security header validation on the agent endpoint. When SECRET_VALIDATION=1,
+    # requests must carry X-User-Key / X-User-Secret headers.
+    secret_validation: int = 0
+    agent_user_key: str = ""
+    agent_user_secret: str = ""
     max_concurrent: int = 10
     db_path: str = "simulations.db"
     agent_timeout_connect: float = 10.0
@@ -22,6 +27,15 @@ class Settings(BaseSettings):
     @property
     def effective_agent_url(self) -> str:
         return self.agent_url_local if self.agent_use_local else self.agent_url
+
+    @property
+    def security_headers(self) -> dict[str, str]:
+        if self.secret_validation == 1:
+            return {
+                "X-User-Key": self.agent_user_key,
+                "X-User-Secret": self.agent_user_secret,
+            }
+        return {}
 
 
 settings = Settings()
