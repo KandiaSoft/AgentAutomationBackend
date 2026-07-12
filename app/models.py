@@ -23,6 +23,7 @@ class AgentRequest(BaseModel):
     question: str
     username: str
     interrupt: int
+    company_id: str
     questionnaire: list[QuestionnaireItem] = []
 
 

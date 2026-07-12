@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     agent_use_local: bool = False
     agent_user_id: str = "test-user-001"
     agent_username: str = "Test Client"
+    agent_company_id: str = "100"
     # Security header validation on the agent endpoint. When SECRET_VALIDATION=1,
     # requests must carry X-User-Key / X-User-Secret headers.
     secret_validation: int = 0

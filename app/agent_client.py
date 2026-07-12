@@ -38,6 +38,7 @@ class PreventivatoreClient:
             question=question,
             username=settings.agent_username,
             interrupt=interrupt,
+            company_id=settings.agent_company_id,
             questionnaire=questionnaire,
         )
         body = payload.model_dump(exclude_none=True)
