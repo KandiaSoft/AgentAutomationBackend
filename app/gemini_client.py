@@ -243,6 +243,7 @@ class GeminiClient:
         conversation_history: list[dict],
         agent_answer: str,
         language: str = "it",
+        extra_instruction: str | None = None,
     ) -> tuple[str, str]:
         lang_name = LANGUAGE_NAMES.get(language, "Italian")
         history_text = _format_history(conversation_history)
@@ -254,6 +255,8 @@ class GeminiClient:
             f"The 'question' field must be in {lang_name}. "
             f"The 'reasoning' field can be in English."
         )
+        if extra_instruction:
+            user_message += f"\n\n{extra_instruction}"
         response = await self._client.aio.models.generate_content(
             model=self._model,
             contents=[types.Content(role="user", parts=[types.Part(text=user_message)])],

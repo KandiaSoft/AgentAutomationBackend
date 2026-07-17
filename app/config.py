@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     agent_max_retries: int = 2
     delay_min_ms: int = 2000
     delay_max_ms: int = 6000
+    # Max turns in advisor mode before forcing the client to request the quote.
+    advisor_max_turns: int = 5
 
     @property
     def effective_agent_url(self) -> str:

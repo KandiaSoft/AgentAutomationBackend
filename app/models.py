@@ -24,6 +24,7 @@ class AgentRequest(BaseModel):
     username: str
     interrupt: int
     company_id: str
+    mode: str
     questionnaire: list[QuestionnaireItem] = []
 
 
@@ -46,6 +47,7 @@ class AgentResponse(BaseModel):
     agent: str | None = None
     tokens_cost: dict[str, Any] | None = None
     checkpoint: bool = False
+    mode: str | None = None
 
 
 class SimulationConfig(BaseModel):
@@ -94,6 +96,7 @@ class TurnRecord(BaseModel):
     duration_ms: int | None
     short_codes: list[Any] = []
     checkpoint: bool = False
+    mode: str | None = None
     created_at: str
 
 

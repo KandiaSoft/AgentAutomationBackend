@@ -20,6 +20,16 @@ _PERSONA_TRAITS = {
 You are a homeowner with no technical knowledge of construction.
 Use simple words, give minimal information, keep answers to 1-2 sentences.
 Avoid technical terminology. Be cooperative but concise.
+
+CONVERSATION FLOW (advisory phase):
+You begin by chatting with an advisor that answers general questions about your
+renovation (materials, typical steps, a rough idea of what to expect).
+Ask a few simple, everyday questions like a non-expert homeowner would (2-4 short
+exchanges), one at a time.
+When you feel you understand enough, clearly tell the agent that you want to start the
+actual quote now (e.g. "Va bene, vorrei procedere con il preventivo"). From that point on,
+answer the quoting questions normally.
+If at any moment you are explicitly asked to start the quote, agree and proceed.
 """,
     },
     "homeowner_technical": {
@@ -91,6 +101,15 @@ Your answers are longer and more detailed.
 """,
     },
 }
+
+
+# Initial agent mode per persona. Only homeowner_basic starts in the conversational
+# advisor mode; every other persona goes straight to the normal quoting flow.
+PERSONA_INITIAL_MODE = {"homeowner_basic": "advisor"}
+
+
+def get_initial_mode(persona_key: str) -> str:
+    return PERSONA_INITIAL_MODE.get(persona_key, "orchestrator")
 
 
 def get_persona_list() -> list[Persona]:

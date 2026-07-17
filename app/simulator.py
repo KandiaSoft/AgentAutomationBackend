@@ -9,7 +9,7 @@ from app.config import settings
 from app.db import insert_turn, update_simulation
 from app.gemini_client import gemini
 from app.models import AgentQuestionnaireOption, QuestionnaireItem, SimulationConfig
-from app.personas import get_system_prompt
+from app.personas import LANGUAGE_NAMES, get_initial_mode, get_system_prompt
 from app.scenarios import SCENARIOS, generate_random_scenario
 
 
@@ -33,6 +33,8 @@ class ClientSimulator:
         self._total_in = 0
         self._total_out = 0
         self._total_cost = 0.0
+        self._mode = get_initial_mode(config.persona_key)
+        self._advisor_turns = 0
 
     async def run(self) -> None:
         try:
@@ -60,8 +62,16 @@ class ClientSimulator:
                     question=self._history[-1].get("question", ""),
                     interrupt=self._history[-1].get("interrupt", 0),
                     questionnaire=self._history[-1].get("questionnaire_items", []),
+                    mode=self._mode,
                 )
                 duration_ms = int((time.monotonic() - _t0) * 1000)
+
+                # Echo the mode returned by the agent for subsequent calls. The
+                # simulator only sets the initial mode; from then on the agent drives
+                # the advisor→orchestrator transition.
+                self._mode = agent_resp.mode or self._mode
+                if self._mode == "advisor":
+                    self._advisor_turns += 1
 
                 in_tok = sum(t.in_tokens for t in agent_resp.tokens)
                 out_tok = sum(t.out_tokens for t in agent_resp.tokens)
@@ -104,6 +114,7 @@ class ClientSimulator:
                     "duration_ms": duration_ms,
                     "short_codes_json": json.dumps(agent_resp.short_codes, ensure_ascii=False),
                     "checkpoint": int(agent_resp.checkpoint),
+                    "mode": self._mode,
                     "created_at": _now(),
                 })
                 self._turn_index += 1
@@ -127,6 +138,7 @@ class ClientSimulator:
                     "total_cost": self._total_cost,
                     "short_codes": agent_resp.short_codes,
                     "checkpoint": agent_resp.checkpoint,
+                    "mode": self._mode,
                 })
 
                 if agent_resp.finished:
@@ -167,12 +179,28 @@ class ClientSimulator:
                         record_as_client=True,
                     )
                 else:
+                    # Hybrid cap: if we've been in advisor mode too long, force the
+                    # client to request the quote in this reply so the agent can switch
+                    # to orchestrator (safety net on top of the persona prompt).
+                    extra_instruction = None
+                    if (
+                        self._mode == "advisor"
+                        and self._advisor_turns >= settings.advisor_max_turns
+                    ):
+                        lang_name = LANGUAGE_NAMES.get(self.config.language, "Italian")
+                        extra_instruction = (
+                            "You have already chatted enough in the advisory phase. "
+                            f"In THIS reply you MUST clearly tell the agent, in {lang_name}, "
+                            "that you want to start the actual quote/preventivo now. "
+                            "Do not ask further advisory questions."
+                        )
                     reply, reasoning = await gemini.generate_reply(
                         system_prompt=system_prompt,
                         scenario=scenario,
                         conversation_history=self._history,
                         agent_answer=agent_resp.answer,
                         language=self.config.language,
+                        extra_instruction=extra_instruction,
                     )
                     await self._client_turn(
                         question=reply,
@@ -237,6 +265,7 @@ class ClientSimulator:
             "duration_ms": None,
             "short_codes_json": "[]",
             "checkpoint": 0,
+            "mode": None,
             "created_at": _now(),
         })
         self._turn_index += 1

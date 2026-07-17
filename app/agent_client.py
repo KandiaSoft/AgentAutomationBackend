@@ -31,6 +31,7 @@ class PreventivatoreClient:
         question: str,
         interrupt: int,
         questionnaire: list[QuestionnaireItem],
+        mode: str,
     ) -> AgentResponse:
         payload = AgentRequest(
             user_id=settings.agent_user_id,
@@ -39,16 +40,18 @@ class PreventivatoreClient:
             username=settings.agent_username,
             interrupt=interrupt,
             company_id=settings.agent_company_id,
+            mode=mode,
             questionnaire=questionnaire,
         )
         body = payload.model_dump(exclude_none=True)
 
         logger.info(
-            "→ POST %s  thread=%s  interrupt=%d  q_items=%d  auth=%s",
+            "→ POST %s  thread=%s  interrupt=%d  q_items=%d  mode=%s  auth=%s",
             settings.effective_agent_url,
             thread_id,
             interrupt,
             len(questionnaire),
+            mode,
             "on" if settings.secret_validation == 1 else "off",
         )
         logger.debug("  request body:\n%s", json.dumps(body, ensure_ascii=False, indent=2))
@@ -81,11 +84,12 @@ class PreventivatoreClient:
                 total_in = sum(t.in_tokens for t in agent_resp.tokens)
                 total_out = sum(t.out_tokens for t in agent_resp.tokens)
                 logger.info(
-                    "← 200  thread=%s  finished=%s  is_questionnaire=%s  agent=%s  q_items=%d  tokens=↑%d ↓%d (entries=%d)",
+                    "← 200  thread=%s  finished=%s  is_questionnaire=%s  agent=%s  mode=%s  q_items=%d  tokens=↑%d ↓%d (entries=%d)",
                     thread_id,
                     agent_resp.finished,
                     agent_resp.is_questionnaire,
                     agent_resp.agent,
+                    agent_resp.mode,
                     len(agent_resp.questionnaire),
                     total_in,
                     total_out,
