@@ -56,6 +56,9 @@ class SimulationConfig(BaseModel):
     scenario_text: str | None = None
     count: int = Field(default=1, ge=1, le=10)
     delay_ms: list[int] = Field(default=[2000, 6000])
+    # Stagger between launching each simulation in a batch (ms). The first starts
+    # immediately, the next after stagger_ms, and so on.
+    stagger_ms: int = Field(default=5000, ge=0)
     generate_scenario: bool = False
     language: str = "it"
 

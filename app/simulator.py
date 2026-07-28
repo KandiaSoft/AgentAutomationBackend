@@ -11,10 +11,27 @@ from app.gemini_client import gemini
 from app.models import AgentQuestionnaireOption, QuestionnaireItem, SimulationConfig
 from app.personas import LANGUAGE_NAMES, get_initial_mode, get_system_prompt
 from app.scenarios import SCENARIOS, generate_random_scenario
+from app.token_meter import token_meter
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _quota_tokens(tokens_cost: dict | None) -> tuple[int, int]:
+    """Return (input, output) tokens as counted toward Gemini's per-minute quota.
+    Input includes cached tokens (fresh + cached), which is what the 429 limit
+    measures. Returns (0, 0) when tokens_cost is unavailable."""
+    if not tokens_cost:
+        return 0, 0
+    models = tokens_cost.get("models")
+    if not isinstance(models, dict):
+        return 0, 0
+    in_sum = out_sum = 0
+    for m in models.values():
+        in_sum += (m.get("fresh_input_tokens") or 0) + (m.get("cached_tokens") or 0)
+        out_sum += m.get("output_tokens") or 0
+    return in_sum, out_sum
 
 
 def _random_delay(min_ms: int, max_ms: int) -> float:
@@ -84,6 +101,11 @@ class ClientSimulator:
                     cost = agent_resp.tokens_cost.get("total_cost")
                     if isinstance(cost, (int, float)):
                         self._total_cost = float(cost)
+
+                # Feed the global TPM meter. Prefer quota-accurate input tokens
+                # (fresh + cached) from tokens_cost; fall back to the tokens list.
+                q_in, q_out = _quota_tokens(agent_resp.tokens_cost)
+                token_meter.record(q_in or in_tok, q_out or out_tok)
 
                 agent_entry = {
                     "role": "agent",

@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db import init_db
 from app.agent_client import agent_client
-from app.routers import simulations, catalog, ws
+from app.routers import simulations, catalog, ws, metrics
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(simulations.router)
 app.include_router(catalog.router)
 app.include_router(ws.router)
+app.include_router(metrics.router)
 
 
 @app.get("/health")

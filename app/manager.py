@@ -38,7 +38,7 @@ class SimulationManager:
             except asyncio.QueueFull:
                 pass
 
-    async def start_simulation(self, config: SimulationConfig) -> str:
+    async def start_simulation(self, config: SimulationConfig, startup_delay: float = 0.0) -> str:
         sim_id = str(uuid.uuid4())
         thread_id = str(uuid.uuid4())
         await insert_simulation({
@@ -54,12 +54,16 @@ class SimulationManager:
             "created_at": _now(),
         })
         sim = ClientSimulator(sim_id, thread_id, config, self._broadcast)
-        task = asyncio.create_task(self._run_with_semaphore(sim))
+        task = asyncio.create_task(self._run_with_semaphore(sim, startup_delay))
         self._active[sim_id] = task
         task.add_done_callback(lambda _: self._active.pop(sim_id, None))
         return sim_id
 
-    async def _run_with_semaphore(self, sim: ClientSimulator) -> None:
+    async def _run_with_semaphore(self, sim: ClientSimulator, startup_delay: float = 0.0) -> None:
+        # Stagger the start of each simulation in a batch. Done before acquiring the
+        # semaphore so the spacing is real regardless of the concurrency limit.
+        if startup_delay > 0:
+            await asyncio.sleep(startup_delay)
         async with self._semaphore:
             try:
                 await sim.run()
@@ -69,9 +73,11 @@ class SimulationManager:
                 pass
 
     async def start_batch(self, config: SimulationConfig) -> list[str]:
+        stagger = config.stagger_ms / 1000.0
         ids = []
-        for _ in range(config.count):
-            sid = await self.start_simulation(config)
+        for i in range(config.count):
+            # First launches immediately; each subsequent one waits i * stagger.
+            sid = await self.start_simulation(config, startup_delay=i * stagger)
             ids.append(sid)
         return ids
 
